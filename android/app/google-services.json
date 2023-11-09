@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "814936024704",
+    "project_id": "doctorsoap-478d5",
+    "storage_bucket": "doctorsoap-478d5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:814936024704:android:5af5c267c8d8bbc9c12865",
+        "android_client_info": {
+          "package_name": "com.doctorapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNQTRZsKc1tPb9mtgK-Fo522kFRMcaAGA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
