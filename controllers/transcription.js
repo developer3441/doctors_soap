@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import fs from "fs";
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: "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",
 });
 export const transcript = async (req, res) => {
   try {
