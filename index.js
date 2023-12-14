@@ -24,7 +24,7 @@ const upload = multer({ storage: storage });
 
 app.use("/api", upload.single("file"), chatRouter);
 app.get('/', (req, res) => {
-  res.send('HELLO from Api')
+  res.send('HELLO from App')
 })
 
 app.listen(3000, () => {
