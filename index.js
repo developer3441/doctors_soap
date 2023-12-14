@@ -23,6 +23,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use("/api", upload.single("file"), chatRouter);
+app.get('/', (req, res) => {
+  res.send('HELLO from Api')
+})
 
 app.listen(3000, () => {
   console.log(`Listening on port ${3000}`);
