@@ -7,6 +7,7 @@ import {
   Text,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import {Button, Icon} from '@rneui/base';
 import AudioRecord from 'react-native-audio-record';
@@ -20,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AuthContext} from '../context/AuthContext';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Snackbar from 'react-native-snackbar';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 const Home = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -33,14 +35,31 @@ const Home = () => {
 
   const animationRef = useRef(null);
 
-  console.log('URL ==>', url);
-
   useEffect(() => {
     animationRef.current?.play();
 
     // Or set a specific startFrame and endFrame with:
     animationRef.current?.play(30, 120);
   }, []);
+
+  const requestIOSPermission = async () => {
+    try {
+      const result = await request(PERMISSIONS.IOS.MICROPHONE);
+      if (result === RESULTS.GRANTED) {
+        // Microphone permission granted
+        console.log('Microphone permission granted');
+      } else {
+        // Microphone permission denied
+        console.log('Microphone permission denied');
+        Alert.alert(
+          'Permission Denied',
+          'You need to grant microphone permission to record audio.',
+        );
+      }
+    } catch (error) {
+      console.error('Error requesting microphone permission:', error);
+    }
+  };
 
   const requestMicrophonePermission = async () => {
     try {
@@ -70,7 +89,15 @@ const Home = () => {
     const getPermission = async () => {
       await requestMicrophonePermission();
     };
-    getPermission();
+    {
+      Platform.OS === 'android' && getPermission();
+    }
+  }, []);
+  useEffect(() => {
+    const getOSPermission = async () => {
+      await requestIOSPermission();
+    };
+    getOSPermission();
   }, []);
 
   //   ******************START RECORDING FUNCTION******************
@@ -245,9 +272,7 @@ const Home = () => {
                 }}
               />
 
-              <Text style={styles.headingText}>
-                {voiceData && JSON.parse(voiceData)}
-              </Text>
+              <Text style={styles.headingText}>{voiceData && JSON.parse(voiceData)}</Text>
               <Text style={styles.assisText}>{chatData}</Text>
               <View style={{alignItems: 'center'}}>
                 <Button
@@ -289,6 +314,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
+    marginTop: Platform.OS === 'ios' ? 50 : 0,
   },
   headingText: {
     fontSize: 16,
