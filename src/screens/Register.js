@@ -43,7 +43,7 @@ const Register = ({navigation}) => {
             phoneNo: phoneNo,
           })
           .then(async () => {
-            await AsyncStorage.setItem('user', JSON.stringify(true));
+            // await AsyncStorage.setItem('user', JSON.stringify(true));
             setIsUserLoggedIn(true);
             setLoading(false);
           })

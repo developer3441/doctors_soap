@@ -8,26 +8,26 @@ export const AuthContext = createContext();
 const AuthContextProvider = ({children}) => {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [loading, setIsLoading] = useState(false);
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      const isUser = await AsyncStorage.getItem('user');
-      if (isUser) {
-        setIsUserLoggedIn(true);
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-      }
-    })();
-  }, [isUserLoggedIn]);
+  // useEffect(() => {
+  //   (async () => {
+  //     setIsLoading(true);
+  //     const isUser = await AsyncStorage.getItem('user');
+  //     if (isUser) {
+  //       setIsUserLoggedIn(true);
+  //       setIsLoading(false);
+  //     } else {
+  //       setIsLoading(false);
+  //     }
+  //   })();
+  // }, [isUserLoggedIn]);
 
-  if (loading) {
-    return (
-      <View style={{flex: 1}}>
-        <CustomLoader />
-      </View>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <View style={{flex: 1}}>
+  //       <CustomLoader />
+  //     </View>
+  //   );
+  // }
 
   return (
     <AuthContext.Provider value={{isUserLoggedIn, setIsUserLoggedIn}}>

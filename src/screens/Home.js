@@ -159,7 +159,8 @@ const Home = () => {
         if (response?.data) {
           axios
             .post(`${BASE_URL}/api/chat`, {
-              message: `The following is a transcript of an appointment between a doctor and a patient. Transform it into SOAP format. ${response?.data}`,
+              message: `The following is a transcript of an appointment between a doctor and a patient. Transform it into SOAP format. No names should be mentioned in there. please use doctor for doctor and patient for patient:
+              ${response?.data}`,
             })
             .then(res => {
               if (res) {
@@ -182,7 +183,7 @@ const Home = () => {
     auth()
       .signOut()
       .then(() => {
-        AsyncStorage.removeItem('user');
+        // AsyncStorage.removeItem('user');
         setIsUserLoggedIn(false);
       })
       .catch(err => console.log('Error in Logout ===>', err));
@@ -253,46 +254,68 @@ const Home = () => {
           <View style={styles.modalContainer}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Icon
-                name="content-copy"
+                name="arrow-back"
                 style={{
-                  alignItems: 'flex-end',
-                  paddingHorizontal: 20,
+                  alignItems: 'flex-start',
+                  paddingHorizontal: 0,
                   marginTop: 10,
                 }}
-                color={'#000000'}
+                size={30}
+                color={'#0361cc'}
                 onPress={() => {
-                  Clipboard.setString(chatData);
-                  Snackbar.show({
-                    text: 'Text copied in clipboard',
-                    duration: Snackbar.LENGTH_SHORT,
-                    backgroundColor: 'white',
-                    textColor: 'black',
-                    marginBottom: 20,
-                  });
+                  setModalVisible(false);
+                  setChatData('');
+                  setVoiceData('');
+                  setUrl('');
                 }}
               />
 
-              <Text style={styles.headingText}>{voiceData && JSON.parse(voiceData)}</Text>
+              <Text style={styles.headingText}>
+                {voiceData && JSON.parse(voiceData)}
+              </Text>
               <Text style={styles.assisText}>{chatData}</Text>
-              <View style={{alignItems: 'center'}}>
+              <View
+                style={{justifyContent: 'space-between', flexDirection: 'row'}}>
                 <Button
-                  onPress={() => {
-                    setModalVisible(false);
-                    setChatData('');
-                    setVoiceData('');
-                    setUrl('');
-                  }}
-                  title={'Back'}
+                  title={'Sync with EMR'}
                   titleStyle={{paddingVertical: 5}}
-                  containerStyle={{width: 150, marginBottom: 40}}
-                  buttonStyle={{borderRadius: 5}}
+                  containerStyle={{marginBottom: 40}}
+                  buttonStyle={{borderRadius: 5, paddingHorizontal: 20}}
                   icon={
                     <Icon
-                      name="arrow-back"
+                      name="sync"
                       color={'#ffffff'}
-                      style={{marginRight: 10}}
+                      style={{marginLeft: 10}}
                     />
                   }
+                  iconRight
+                />
+                <Button
+                  onPress={() => {
+                    Clipboard.setString(chatData);
+                    Snackbar.show({
+                      text: 'Text copied in clipboard',
+                      duration: Snackbar.LENGTH_SHORT,
+                      backgroundColor: '#0361cc',
+                      textColor: '#ffffff',
+                    });
+                  }}
+                  title={'Copy Text'}
+                  titleStyle={{paddingVertical: 5}}
+                  containerStyle={{marginBottom: 40}}
+                  buttonStyle={{
+                    borderRadius: 5,
+                    paddingHorizontal: 20,
+                    backgroundColor: 'green',
+                  }}
+                  icon={
+                    <Icon
+                      name="content-copy"
+                      color={'#ffffff'}
+                      style={{marginLeft: 10}}
+                    />
+                  }
+                  iconRight
                 />
               </View>
             </ScrollView>

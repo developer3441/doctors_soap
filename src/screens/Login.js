@@ -21,7 +21,7 @@ const Login = ({navigation}) => {
     auth()
       .signInWithEmailAndPassword(email, password)
       .then(async () => {
-        await AsyncStorage.setItem('user', JSON.stringify(true));
+        // await AsyncStorage.setItem('user', JSON.stringify(true));
         setIsUserLoggedIn(true);
         setLoading(false);
       })
