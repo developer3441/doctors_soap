@@ -8,6 +8,8 @@ export const AuthContext = createContext();
 const AuthContextProvider = ({children}) => {
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [loading, setIsLoading] = useState(false);
+  const [user, setUser] = useState({});
+  const [recordUpdated, setRecordUpdated] = useState(false);
   // useEffect(() => {
   //   (async () => {
   //     setIsLoading(true);
@@ -15,22 +17,39 @@ const AuthContextProvider = ({children}) => {
   //     if (isUser) {
   //       setIsUserLoggedIn(true);
   //       setIsLoading(false);
-  //     } else {
+  //     } else {s
   //       setIsLoading(false);
   //     }
   //   })();
   // }, [isUserLoggedIn]);
 
-  // if (loading) {
-  //   return (
-  //     <View style={{flex: 1}}>
-  //       <CustomLoader />
-  //     </View>
-  //   );
-  // }
+  useEffect(() => {
+    (async () => {
+      const data = await AsyncStorage.getItem('userDetail');
+      const jval = JSON.parse(data);
+      if (jval !== null) {
+        setUser(jval);
+      }
+    })();
+  }, [isUserLoggedIn]);
+
+  if (loading) {
+    return (
+      <View style={{flex: 1}}>
+        <CustomLoader />
+      </View>
+    );
+  }
 
   return (
-    <AuthContext.Provider value={{isUserLoggedIn, setIsUserLoggedIn}}>
+    <AuthContext.Provider
+      value={{
+        isUserLoggedIn,
+        setIsUserLoggedIn,
+        user,
+        setRecordUpdated,
+        recordUpdated,
+      }}>
       {children}
     </AuthContext.Provider>
   );

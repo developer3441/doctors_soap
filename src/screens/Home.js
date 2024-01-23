@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import {Button, Icon} from '@rneui/base';
+import {Button, Icon, Image} from '@rneui/base';
 import AudioRecord from 'react-native-audio-record';
 import {Buffer} from 'buffer';
 import axios from 'axios';
@@ -22,6 +22,13 @@ import {AuthContext} from '../context/AuthContext';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Snackbar from 'react-native-snackbar';
 import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import Sound from 'react-native-sound';
+import {Input} from '@rneui/themed';
+import firestore from '@react-native-firebase/firestore';
+import Storage from '@react-native-firebase/storage';
+import waves from '../images/soundWaves.png';
+import Logo from '../images/logo_new.webp';
+import {log} from 'console';
 
 const Home = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -30,8 +37,12 @@ const Home = () => {
   const [chatData, setChatData] = useState('');
   const [voiceData, setVoiceData] = useState('');
   const [loading, setIsLoading] = useState(false);
+  const [input, setInput] = useState('');
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [tone, setTone] = useState();
 
-  const {setIsUserLoggedIn} = useContext(AuthContext);
+  const {setIsUserLoggedIn, user, setRecordUpdated} = useContext(AuthContext);
 
   const animationRef = useRef(null);
 
@@ -97,7 +108,7 @@ const Home = () => {
     const getOSPermission = async () => {
       await requestIOSPermission();
     };
-    getOSPermission();
+    Platform.OS === 'ios' && getOSPermission();
   }, []);
 
   //   ******************START RECORDING FUNCTION******************
@@ -132,6 +143,27 @@ const Home = () => {
     }
   };
 
+  const checkRegex = chat => {
+    const responseText = chat;
+
+    // Regular expressions to extract each SOAP section
+    const sectionsRegex = /(\w+):([\s\S]*?)(?=\w+:|$)/g;
+
+    // Extracted SOAP sections
+    const sections = {};
+    let match;
+
+    while ((match = sectionsRegex.exec(responseText)) !== null) {
+      const heading = match[1].trim();
+      const content = match[2].trim();
+      sections[heading] = content;
+    }
+
+    console.log('Section ===>>>>', sections);
+
+    setChatData(sections);
+  };
+
   const startTranscript = async () => {
     if (url) {
       setIsLoading(true);
@@ -159,7 +191,12 @@ const Home = () => {
         if (response?.data) {
           axios
             .post(`${BASE_URL}/api/chat`, {
-              message: `The following is a transcript of an appointment between a doctor and a patient. Transform it into SOAP format. No names should be mentioned in there. please use doctor for doctor and patient for patient:
+              message: `The following is a transcript of an appointment between a doctor and a patient. Transform it into SOAP. please use doctor for doctor and patient for patient
+              {
+                "content": "Subjective: {Subjective}\nObjective: {Objective}\nAssessment: {Assessment}\nPlan: {Plan}",
+                "role": "assistant"
+              }
+              :
               ${response?.data}`,
             })
             .then(res => {
@@ -167,6 +204,7 @@ const Home = () => {
                 setChatData(res?.data?.choices[0]?.message?.content);
                 setModalVisible(true);
                 setIsLoading(false);
+                checkRegex(res?.data?.choices[0]?.message?.content);
               }
             })
             .catch(err => {
@@ -183,10 +221,89 @@ const Home = () => {
     auth()
       .signOut()
       .then(() => {
-        // AsyncStorage.removeItem('user');
+        AsyncStorage.removeItem('userDetail');
         setIsUserLoggedIn(false);
       })
       .catch(err => console.log('Error in Logout ===>', err));
+  };
+
+  const saveHistory = async () => {
+    setLoadingHistory(true);
+    const docRef = firestore().collection('History').doc(user?.user?.uid);
+    const doc = await docRef.get();
+    const existingData = doc.exists ? doc.data() : {history: []};
+
+    const newData = {
+      history: [
+        ...existingData.history,
+        {
+          title: input,
+          detail: chatData,
+          recording: voiceData,
+          timeStamp: new Date().toLocaleString(),
+        },
+      ],
+    };
+
+    await docRef
+      .set(newData)
+      .then(() => {
+        setModalVisible(false);
+        setLoadingHistory(false);
+        setInput('');
+        setRecordUpdated(true);
+        setChatData('');
+        setVoiceData('');
+        setUrl('');
+      })
+      .catch(err => {
+        console.error('Error in storing data:', err);
+        setLoadingHistory(false);
+      })
+      .catch(err => console.log('Error in Storing File', err));
+  };
+
+  useEffect(() => {
+    const ringtone = new Sound(url, Sound.MAIN_BUNDLE, error => {
+      if (error) {
+        console.error('Failed to load sound', error);
+      }
+    });
+    setTone(ringtone);
+
+    return () => {
+      // Release the sound when the component unmounts
+      ringtone.release();
+    };
+  }, [url]);
+
+  const ringBell = () => {
+    setIsPlaying(true);
+    tone.play(success => {
+      if (success) {
+        setIsPlaying(false);
+        console.log('Ringtone played successfully');
+      } else {
+        console.error('Ringtone playback failed');
+      }
+    });
+    // Play the ringtone
+  };
+
+  const pauseRingtone = () => {
+    if (tone && isPlaying) {
+      tone.pause(() => {
+        setIsPlaying(false);
+      });
+    }
+  };
+
+  const stopRingtone = () => {
+    if (tone && isPlaying) {
+      tone.stop(() => {
+        setIsPlaying(false);
+      });
+    }
   };
 
   return (
@@ -197,7 +314,7 @@ const Home = () => {
         containerStyle={{
           justifyContent: 'flex-end',
           alignItems: 'flex-end',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#e6e6e6',
         }}
         buttonStyle={{
           borderWidth: 1,
@@ -212,6 +329,9 @@ const Home = () => {
         }}
         titleStyle={{fontSize: 13}}
       />
+      <View style={{position: 'absolute', backgroundColor: '#e6e6e6'}}>
+        <Image source={Logo} style={{width: 200, height: 28, marginTop: 20}} />
+      </View>
       <View style={styles.container}>
         {isRecording && (
           <LottieView
@@ -224,31 +344,47 @@ const Home = () => {
         <View
           style={[
             styles.buttonContainer,
-            {marginTop: isRecording ? 0 : '50%'},
+            {marginTop: isRecording ? 50 : '50%'},
           ]}>
           <Button
             onPress={startRecording}
             title={'Start Recording'}
-            buttonStyle={{borderRadius: 5, marginVertical: 0, width: '80%'}}
+            buttonStyle={{
+              borderRadius: 5,
+              marginVertical: 0,
+              width: '80%',
+              backgroundColor: '#92bc2a',
+            }}
             titleStyle={{paddingVertical: 5}}
             disabled={!isRecording ? false : true}
           />
           <Button
             onPress={stopRecording}
             title={'Stop Recording'}
-            buttonStyle={{borderRadius: 5, marginVertical: 0, width: '80%'}}
+            buttonStyle={{
+              borderRadius: 5,
+              marginVertical: 0,
+              width: '80%',
+              backgroundColor: '#92bc2a',
+            }}
             titleStyle={{paddingVertical: 5}}
             disabled={!isRecording ? true : false}
+            disabledStyle={{borderWidth: 1, borderColor: '#92bc2a'}}
           />
         </View>
         <Button
           title={'Start Transcript'}
-          buttonStyle={{borderRadius: 5, marginBottom: '50%'}}
+          buttonStyle={{
+            borderRadius: 5,
+            marginBottom: '50%',
+            backgroundColor: '#92bc2a',
+          }}
           titleStyle={{paddingVertical: 5}}
           onPress={startTranscript}
           disabled={!url}
           loading={loading ? true : false}
           loadingProps={{animating: true, color: '#ffffff'}}
+          disabledStyle={{borderWidth: 1, borderColor: '#92bc2a'}}
         />
         <Modal visible={modalVisible} animationType="slide">
           <View style={styles.modalContainer}>
@@ -261,26 +397,48 @@ const Home = () => {
                   marginTop: 10,
                 }}
                 size={30}
-                color={'#0361cc'}
+                color={'#92bc2a'}
                 onPress={() => {
                   setModalVisible(false);
                   setChatData('');
                   setVoiceData('');
                   setUrl('');
+                  setInput('');
                 }}
               />
+              <Input
+                placeholder="GIVE IT A NAME AND SAVE"
+                style={{fontSize: 18, color: '#000000'}}
+                placeholderTextColor={'gray'}
+                value={input}
+                onChangeText={text => setInput(text)}
+              />
+              {input !== '' && (
+                <Button
+                  onPress={saveHistory}
+                  title={'Save'}
+                  buttonStyle={{
+                    width: '50%',
+                    backgroundColor: '#0361cc',
+                    borderRadius: 5,
+                  }}
+                  containerStyle={{alignItems: 'center', marginVertical: 10}}
+                  loading={loadingHistory ? true : false}
+                  loadingProps={{animating: true, color: '#ffffff'}}
+                />
+              )}
 
-              <Text style={styles.headingText}>
-                {voiceData && JSON.parse(voiceData)}
-              </Text>
-              <Text style={styles.assisText}>{chatData}</Text>
               <View
                 style={{justifyContent: 'space-between', flexDirection: 'row'}}>
                 <Button
                   title={'Sync with EMR'}
                   titleStyle={{paddingVertical: 5}}
                   containerStyle={{marginBottom: 40}}
-                  buttonStyle={{borderRadius: 5, paddingHorizontal: 20}}
+                  buttonStyle={{
+                    borderRadius: 5,
+                    paddingHorizontal: 20,
+                    backgroundColor: '#92bc2a',
+                  }}
                   icon={
                     <Icon
                       name="sync"
@@ -318,6 +476,93 @@ const Home = () => {
                   iconRight
                 />
               </View>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#E7F0FA',
+                  marginHorizontal: 60,
+                  paddingVertical: 5,
+                  borderRadius: 20,
+                  marginTop: 10,
+                }}>
+                <Icon
+                  name={!isPlaying ? 'play-arrow' : 'pause'}
+                  style={{marginRight: 10}}
+                  onPress={isPlaying ? pauseRingtone : ringBell}
+                />
+                <View style={{width: '65%'}}>
+                  <Image source={waves} style={{height: 30, width: '100%'}} />
+                </View>
+                {isPlaying && (
+                  <Icon
+                    name={'stop-circle'}
+                    onPress={stopRingtone}
+                    style={{marginLeft: 12}}
+                  />
+                )}
+              </View>
+              <Text style={styles.headingText}>
+                {voiceData && JSON.parse(voiceData)}
+              </Text>
+              {chatData && (
+                <>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      marginBottom: 7,
+                    }}>
+                    Subjective:
+                  </Text>
+                  <Text style={{fontSize: 15, color: '#000000'}}>
+                    {chatData?.Subjective}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      marginTop: 15,
+                      marginBottom: 7,
+                    }}>
+                    Objective:
+                  </Text>
+                  <Text style={{fontSize: 15, color: '#000000'}}>
+                    {chatData?.Objective}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      marginTop: 15,
+                      marginBottom: 7,
+                    }}>
+                    Assessment:
+                  </Text>
+                  <Text style={{fontSize: 15, color: '#000000'}}>
+                    {chatData?.Assessment}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      marginTop: 15,
+                      marginBottom: 7,
+                    }}>
+                    Plan:
+                  </Text>
+                  <Text style={{fontSize: 15, color: '#000000'}}>
+                    {chatData?.Plan}
+                  </Text>
+                </>
+              )}
+              {/* <Text style={styles.assisText}>{chatData}</Text> */}
             </ScrollView>
           </View>
         </Modal>
@@ -330,12 +575,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#e6e6e6',
     paddingTop: '29%',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#e6e6e6',
     paddingHorizontal: 10,
     marginTop: Platform.OS === 'ios' ? 50 : 0,
   },

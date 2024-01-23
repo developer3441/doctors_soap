@@ -3,7 +3,7 @@ import {ActivityIndicator, StyleSheet, View} from 'react-native';
 export default function CustomLoader() {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={'#0361cc'} />
+      <ActivityIndicator size="large" color={'#92bc2a'} />
     </View>
   );
 }

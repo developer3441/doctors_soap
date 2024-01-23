@@ -20,8 +20,9 @@ const Login = ({navigation}) => {
     setLoading(true);
     auth()
       .signInWithEmailAndPassword(email, password)
-      .then(async () => {
+      .then(async res => {
         // await AsyncStorage.setItem('user', JSON.stringify(true));
+        await AsyncStorage.setItem('userDetail', JSON.stringify(res));
         setIsUserLoggedIn(true);
         setLoading(false);
       })
@@ -42,7 +43,7 @@ const Login = ({navigation}) => {
         <Text
           style={{
             fontSize: 24,
-            color: '#0361cc',
+            color: '#92bc2a',
             textAlign: 'center',
             fontWeight: '600',
             marginBottom: '20%',
@@ -52,11 +53,11 @@ const Login = ({navigation}) => {
         <Input
           placeholder="Enter Email"
           style={styles.inputEmail}
-          leftIcon={<Icon name="person" color={'#0361cc'} />}
-          selectionColor={'#0361cc'}
+          leftIcon={<Icon name="person" color={'#92bc2a'} />}
+          selectionColor={'#92bc2a'}
           inputContainerStyle={{
             borderWidth: 1,
-            borderColor: '#0361cc',
+            borderColor: '#92bc2a',
             paddingHorizontal: 5,
             borderRadius: 8,
           }}
@@ -65,12 +66,12 @@ const Login = ({navigation}) => {
         />
         <Input
           placeholder="Enter Password"
-          selectionColor={'#0361cc'}
+          selectionColor={'#92bc2a'}
           style={styles.inputEmail}
-          leftIcon={<Icon name="lock" color={'#0361cc'} />}
+          leftIcon={<Icon name="lock" color={'#92bc2a'} />}
           inputContainerStyle={{
             borderWidth: 1,
-            borderColor: '#0361cc',
+            borderColor: '#92bc2a',
             paddingHorizontal: 5,
             borderRadius: 8,
           }}
@@ -94,7 +95,7 @@ const Login = ({navigation}) => {
               borderRadius: 8,
               marginTop: 22,
             }}
-            buttonStyle={{backgroundColor: '#0361cc', paddingVertical: 13}}
+            buttonStyle={{backgroundColor: '#92bc2a', paddingVertical: 13}}
             titleStyle={{
               textTransform: 'uppercase',
               fontWeight: 'bold',
@@ -105,6 +106,12 @@ const Login = ({navigation}) => {
             loading={loading}
             loadingProps={{animating: true, color: '#ffffff'}}
             disabled={email && password ? false : true}
+            disabledStyle={{
+              borderWidth: 1,
+              borderColor: '#92bc2a',
+              borderRadius: 8,
+            }}
+            disabledTitleStyle={{color: '#000000'}}
           />
         </View>
         <View
@@ -122,7 +129,7 @@ const Login = ({navigation}) => {
                 setPassword('');
                 setSeePass(false);
               }}
-              style={{fontSize: 14, color: '#0361cc', fontWeight: '600'}}>
+              style={{fontSize: 14, color: '#92bc2a', fontWeight: '600'}}>
               Register Now
             </Text>
           </Text>
@@ -135,30 +142,14 @@ const Login = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: '#e6e6e6',
   },
   innerContainer: {
-    // justifyContent: 'center',
-    // height: '90%',
     paddingVertical: 60,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#e6e6e6',
     paddingHorizontal: 10,
-    // shadowColor: '#0361cc',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.25,
-    // shadowRadius: 3.84,
-
-    // elevation: 5,
-    // width: '100%',
-    // borderTopLeftRadius: 30,
-    // borderTopRightRadius: 30,
   },
   inputEmail: {
-    // borderWidth: 1,
-    // paddingHorizontal: 10,
     fontSize: 16,
     borderRadius: 5,
     borderBottomColor: '#0361cc',
